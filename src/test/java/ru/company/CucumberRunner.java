@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
                 "summary"},
         glue = {"ru.company.steps"},
         features = {"src/test/resources/"},
-        tags = "@checkBudsItems"
+        tags = "@all"
 )
 public class CucumberRunner {
 }
