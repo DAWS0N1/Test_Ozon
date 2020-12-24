@@ -79,20 +79,6 @@ public class BasePage {
     }
 
     /**
-     * Явное ожидание состояния видимости элемента
-     *
-     * @param element - веб-элемент который требует проверки на видимость
-     * @return WebElement - возвращаем тот же веб элемент что был передан в функцию
-     * @see WebDriverWait
-     * @see org.openqa.selenium.support.ui.FluentWait
-     * @see org.openqa.selenium.support.ui.Wait
-     * @see ExpectedConditions
-     */
-    protected WebElement elementToBeVisible(WebElement element) {
-        return wait.until(ExpectedConditions.visibilityOf(element));
-    }
-
-    /**
      * Общий метод по заполнения поля поиска
      *
      * @param field - веб-елемент поле поиска

@@ -3,7 +3,6 @@ package ru.company.framework.pages;
 import io.qameta.allure.Step;
 import org.junit.Assert;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import ru.company.framework.utils.Item;
@@ -11,7 +10,7 @@ import ru.company.framework.utils.Item;
 import java.util.List;
 
 public class SearchPage extends BasePage {
-    @FindBy(xpath = "//div[@data-widget='fulltextResultsHeader']/div[1]/strong")
+    @FindBy(xpath = "//div[@data-widget='fulltextResultsHeader']/div/strong")
     WebElement searchingName;
 
     @FindBy(xpath = "//div[contains(@class, 'filter-block')]")
@@ -32,6 +31,15 @@ public class SearchPage extends BasePage {
     @FindBy(xpath = "//a[contains(@data-widget, 'cart')]")
     WebElement bucketBut;
 
+    /**
+     *
+     * Метод проверки поиска
+     *
+     */
+    @Step("Проверка на соответствие")
+    public void assertSearch(){
+        Assert.assertEquals("Найден неправильный товар", StartPage.searchingItemName, searchingName.getText());
+    }
 
     /**
      *
@@ -48,9 +56,20 @@ public class SearchPage extends BasePage {
                 for (WebElement filter: filtersTable) {
                     WebElement title = filter.findElement(By.xpath("./div[1]"));
                     scrollElementInCenter(title, 200);
+                    int curFilt = filterResults.size();
                     if (title.getText().trim().equalsIgnoreCase(filterName)){
                         WebElement input = filter.findElement(By.xpath("//input[@qa-id='range-to']"));
                         fillInput(input, value);
+                        boolean isResult = true;
+                        while (isResult) {
+                            try {
+                                Thread.sleep(200);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            if (filterResults.size() != curFilt)
+                                isResult = false;
+                        }
                         break;
                     }
                 }
@@ -69,25 +88,7 @@ public class SearchPage extends BasePage {
                         if (brand.findElement(By.xpath(".//span")).getText().trim().equalsIgnoreCase(value)) {
                                 brand.findElement(By.xpath("./div[1]")).click();
                         }
-
-                        boolean isTrue = false;
-
-                        while (!isTrue) {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            for (WebElement filt: filterResults) {
-                                scrollElementInCenter(filt, 200);
-                                String s = filterName+": "+ value;
-                                if (filt.getText().trim().equalsIgnoreCase(s)){
-                                    isTrue = true;
-                                    break;
-                                }
-                            }
-                        }
-
+                        waitFilter(filterName, value);
                         break;
                     }
                 }
@@ -103,6 +104,7 @@ public class SearchPage extends BasePage {
                             if (par.getText().trim().equalsIgnoreCase(value)) {
                                 WebElement checkbox = paramName.findElement(By.xpath(".//input"));
                                 action.moveToElement(checkbox).click().build().perform();
+                                waitFilter(filterName, value);
                                 break;
                             }
                         }
@@ -118,24 +120,7 @@ public class SearchPage extends BasePage {
                         scrollElementInCenter(checkbox, 200);
                         if (value.equalsIgnoreCase("true"))
                             action.moveToElement(checkbox).click().build().perform();
-
-                        boolean isTrue = false;
-
-                        while (!isTrue) {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                            for (WebElement filt: filterResults) {
-                                scrollElementInCenter(filt, 200);
-                                if (filt.getText().trim().equalsIgnoreCase(filterName)){
-                                    isTrue = true;
-                                    break;
-                                }
-                            }
-                        }
-
+                        waitFilter(filterName);
                         break;
                     }
                 }
@@ -158,23 +143,7 @@ public class SearchPage extends BasePage {
         List<WebElement> pages = paginator.findElements(By.xpath("./div[2]//a"));
         if (pages.get(pages.size()-1).getAttribute("innerText").equalsIgnoreCase("Дальше")) {
             while (pages.get(pages.size()-1).getAttribute("innerText").equalsIgnoreCase("Дальше")) {
-                for (int i = 1; i < itemsTable.size(); i += 2) {
-                    WebElement item = itemsTable.get(i);
-                    WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                    scrollElementInCenter(item, 100);
-                    if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                        String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                        int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                        Item.addItems(new Item(name, current));
-                        action.moveToElement(bucketButton).click().build().perform();
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                }
+                addBucket();
                 scrollElementInCenter(pages.get(pages.size()-1), 400);
                 pages.get(pages.size()-1).click();
             }
@@ -190,23 +159,7 @@ public class SearchPage extends BasePage {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-                for (int i = 1; i < itemsTable.size(); i += 2) {
-                    WebElement item = itemsTable.get(i);
-                    scrollElementInCenter(item, 100);
-                    WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                    if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                        String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                        int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                        Item.addItems(new Item(name, current));
-                        action.moveToElement(bucketButton).click().build().perform();
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
+                addBucket();
             }
         } else {
             int pageCur = Integer.parseInt(pages.get(pages.size() - 1).getText());
@@ -220,23 +173,7 @@ public class SearchPage extends BasePage {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-
-                for (int i = 1; i < itemsTable.size(); i += 2) {
-                    WebElement item = itemsTable.get(i);
-                    scrollElementInCenter(item, 100);
-                    WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                    if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                        String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                        int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                        Item.addItems(new Item(name, current));
-                        action.moveToElement(bucketButton).click().build().perform();
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
+                addBucket();
             }
         }
         return this;
@@ -253,25 +190,7 @@ public class SearchPage extends BasePage {
         List<WebElement> pages = paginator.findElements(By.xpath("./div[2]//a"));
         if (pages.get(pages.size()-1).getAttribute("innerText").equalsIgnoreCase("Дальше")) {
             while (pages.get(pages.size()-1).getAttribute("innerText").equalsIgnoreCase("Дальше")) {
-                for (int i = 1; i < itemsTable.size(); i += 2) {
-                    WebElement item = itemsTable.get(i);
-                    scrollElementInCenter(item, 100);
-                    WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                    if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                        String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                        int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                        Item.addItems(new Item(name, current));
-                        action.moveToElement(bucketButton).click().build().perform();
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (Item.getItems().size() >= val) {
-                        break;
-                    }
-                }
+                addBucket(val);
                 scrollElementInCenter(pages.get(pages.size()-1), 400);
                 pages.get(pages.size()-1).click();
             }
@@ -288,25 +207,7 @@ public class SearchPage extends BasePage {
                         e.printStackTrace();
                     }
 
-                    for (int i = 1; i < itemsTable.size(); i += 2) {
-                        WebElement item = itemsTable.get(i);
-                        scrollElementInCenter(item, 100);
-                        WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                        if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                            String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                            int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                            Item.addItems(new Item(name, current));
-                            action.moveToElement(bucketButton).click().build().perform();
-                            try {
-                                Thread.sleep(200);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                        if (Item.getItems().size() >= val) {
-                            break;
-                        }
-                    }
+                    addBucket(val);
                 }
             }
         } else {
@@ -325,25 +226,7 @@ public class SearchPage extends BasePage {
                 if (Item.getItems().size() >= val) {
                     break;
                 }
-                for (int i = 1; i < itemsTable.size(); i += 2) {
-                    WebElement item = itemsTable.get(i);
-                    scrollElementInCenter(item, 100);
-                    WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
-                    if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
-                        String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
-                        int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
-                        Item.addItems(new Item(name, current));
-                        action.moveToElement(bucketButton).click().build().perform();
-                        try {
-                            Thread.sleep(200);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (Item.getItems().size() >= val) {
-                        break;
-                    }
-                }
+                addBucket(val);
             }
         }
         return this;
@@ -353,5 +236,87 @@ public class SearchPage extends BasePage {
         scrollToElementJs(bucketBut);
         action.moveToElement(bucketBut).click().build().perform();
         return app.getBucketPage();
+    }
+
+
+
+    private void waitFilter(String filterName, String value) {
+        boolean isTrue = true;
+
+        while (isTrue) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for (WebElement filt: filterResults) {
+                scrollElementInCenter(filt, 200);
+                String s = filterName+": "+ value;
+                if (filt.getText().trim().equalsIgnoreCase(s)){
+                    isTrue = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void waitFilter(String filterName) {
+        boolean isTrue = true;
+
+        while (isTrue) {
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for (WebElement filt : filterResults) {
+                scrollElementInCenter(filt, 200);
+                if (filt.getText().trim().equalsIgnoreCase(filterName)) {
+                    isTrue = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    private void addBucket(){
+        for (int i = 1; i < itemsTable.size(); i += 2) {
+            WebElement item = itemsTable.get(i);
+            scrollElementInCenter(item, 100);
+            WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
+            if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
+                String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
+                int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
+                Item.addItems(new Item(name, current));
+                action.moveToElement(bucketButton).click().build().perform();
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private void addBucket(int val) {
+        for (int i = 1; i < itemsTable.size(); i += 2) {
+            WebElement item = itemsTable.get(i);
+            scrollElementInCenter(item, 100);
+            WebElement bucketButton = item.findElement(By.xpath(".//button//div[text()]"));
+            if (bucketButton.getText().trim().equalsIgnoreCase("В корзину")) {
+                String name = item.findElement(By.xpath(".//a[contains(@class, 'tile-hover-target') and text()]")).getText();
+                int current = Integer.parseInt(parseInt(item.findElement(By.xpath(".//div[contains(@class, 'itemasdasda')]/span[1]")).getText()));
+                Item.addItems(new Item(name, current));
+                action.moveToElement(bucketButton).click().build().perform();
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (Item.getItems().size() >= val) {
+                break;
+            }
+        }
     }
 }

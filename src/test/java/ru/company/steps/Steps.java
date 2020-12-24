@@ -22,6 +22,11 @@ public class Steps {
         app.getStartPage().searchingItem(nameItem);
     }
 
+    @Тогда("^Проверяем поисковый запрос$")
+    public void assertSearch(){
+        app.getSearchPage().assertSearch();
+    }
+
     @Тогда("^Выбираем фильтр по форме поле/значение$")
     public void inputSFilter(DataTable dataTable) {
         dataTable.cells().forEach(

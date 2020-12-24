@@ -51,14 +51,15 @@ public class BucketPage extends BasePage {
         controlPanel.findElement(By.xpath("./span")).click();
 
         deleting.click();
-        try{
-            title.getText();
-        } catch (Exception e) {
+        boolean isResult = true;
+        while (isResult) {
             try {
                 Thread.sleep(500);
-            } catch (InterruptedException interruptedException) {
-                interruptedException.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
+            if (title.getText().trim().equalsIgnoreCase("Корзина пуста"))
+                isResult = false;
         }
         Assert.assertEquals("Корзина не пуста", "Корзина пуста", title.getText().trim());
         return app.getBucketPage();

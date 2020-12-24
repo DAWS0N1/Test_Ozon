@@ -13,17 +13,17 @@ public class PageManager {
     /**
      * Стартовая страничка
      */
-    StartPage startPage;
+    private static StartPage startPage;
 
     /**
      * Страница поиска
      */
-    SearchPage searchPage;
+    private static SearchPage searchPage;
 
     /**
      * Страница корзины
      */
-    BucketPage bucketPage;
+    private static BucketPage bucketPage;
 
     /**
      * Конструктор специально запривейтили (синглтон)
@@ -77,5 +77,17 @@ public class PageManager {
             bucketPage = new BucketPage();
         }
         return bucketPage;
+    }
+
+    public static void quitPages() {
+        if (startPage != null) {
+            startPage = null;
+        }
+        if (searchPage != null) {
+            searchPage = null;
+        }
+        if (bucketPage != null) {
+            bucketPage = null;
+        }
     }
 }
